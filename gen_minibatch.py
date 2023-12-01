@@ -3,6 +3,7 @@ import os
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--data', type=str, help='dataset name')
+parser.add_argument('--data_path', type=str, default='', help='path to data folder')
 parser.add_argument('--train_neg_samples', type=int, default=1)
 parser.add_argument('--neg_sets', type=int, default=32, help='how many groups of negative samples')
 parser.add_argument('--seed', type=int, default=0, help='random seed to use')
@@ -51,7 +52,8 @@ if args.edge_classification:
     args.neg_sets = 0
     train_param['train_neg_samples'] = 0
     train_param['eval_neg_samples'] = 0
-    edge_cls = torch.load('DATA/{}/ec_edge_class.pt'.format(args.data))
+    data_file = os.path.join(args.data_path, 'DATA/{}/ec_edge_class.pt'.format(args.data))
+    edge_cls = torch.load(data_file)
 
 g, df = load_graph(args.data)
 train_edge_end = df[df['ext_roll'].gt(0)].index[0]
@@ -71,14 +73,14 @@ else:
 if not os.path.isdir('minibatches'):
     os.mkdir('minibatches')
 if args.minibatch_parallelism == 1:
-    path = 'minibatches/{}_{}_{}_{}/'.format(args.data, train_param['train_neg_samples'], train_param['eval_neg_samples'], args.neg_sets)
+    path = os.path.join(args.data_path, 'minibatches/{}_{}_{}_{}/'.format(args.data, train_param['train_neg_samples'], train_param['eval_neg_samples'], args.neg_sets))
 else:
-    path = 'minibatches/{}_{}_{}_{}_{}/'.format(args.minibatch_parallelism, args.data, train_param['train_neg_samples'], train_param['eval_neg_samples'], args.neg_sets)
+    path = os.path.join(args.data_path,'minibatches/{}_{}_{}_{}_{}/'.format(args.minibatch_parallelism, args.data, train_param['train_neg_samples'], train_param['eval_neg_samples'], args.neg_sets))
 if not os.path.isdir(path):
     os.mkdir(path)
 
 stats = {'num_nodes': g['indptr'].shape[0] - 1, 'num_edges': len(df)}
-with open('minibatches/{}_stats.pkl'.format(args.data), 'wb') as f:
+with open(os.path.join(args.data_path, 'minibatches/{}_stats.pkl'.format(args.data)), 'wb') as f:
     pickle.dump(stats, f)
 
 train_df = df[:train_edge_end]
@@ -147,7 +149,7 @@ for _, rows in tqdm(train_df.groupby(train_df.index // train_param['batch_size']
             mfg.srcdata['mem_ts'] = mem_ts[mfg.srcdata['ID']]
             mfg.srcdata['mail_ts'] = mail_ts[mfg.srcdata['ID']]
             mfg.srcdata['mail_e'] = mail_e[mfg.srcdata['ID']]
-            with open('{}/train_neg_{}_{}.pkl'.format(path, i, j), 'wb') as f:
+            with open(os.path.join(args.data_path, '{}/train_neg_{}_{}.pkl'.format(path, i, j)), 'wb') as f:
                 pickle.dump(mfg, f)
 
     if len(pos_mfgs) == args.minibatch_parallelism:
@@ -201,7 +203,7 @@ for _, rows in tqdm(train_df.groupby(train_df.index // train_param['batch_size']
 
 
 if args.gen_eval:
-    path = 'minibatches/{}_{}_eval/'.format(args.data, train_param['eval_neg_samples'])
+    path = os.path.join(args.data_path, 'minibatches/{}_{}_eval/'.format(args.data, train_param['eval_neg_samples']))
     if not os.path.isdir(path):
         os.mkdir(path)
 
@@ -254,7 +256,7 @@ if args.gen_eval:
             mfg.srcdata['mem_ts'] = mem_ts[mfg.srcdata['ID']]
             mfg.srcdata['mail_ts'] = mail_ts[mfg.srcdata['ID']]
             mfg.srcdata['mail_e'] = mail_e[mfg.srcdata['ID']]
-            with open('{}/val_neg_{}.pkl'.format(path, i), 'wb') as f:
+            with open(os.path.join(args.data_path, '{}/val_neg_{}.pkl'.format(path, i)), 'wb') as f:
                 pickle.dump(mfg, f)
             
         # update mem_ts, mail_ts, and mail_e

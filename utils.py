@@ -21,19 +21,19 @@ def calc_f1_mic(y_true, y_pred):
     y_pred[y_pred <= 0] = 0
     return metrics.f1_score(y_true, y_pred, average="micro")
 
-def load_feat(d):
+def load_feat(d, data_path=''):
     node_feats = None
-    if os.path.exists('DATA/{}/node_features.pt'.format(d)):
-        node_feats = torch.load('DATA/{}/node_features.pt'.format(d))
-    elif os.path.exists('DATA/{}/learned_node_feats.pt'.format(d)):
-        node_feats = torch.load('DATA/{}/learned_node_feats.pt'.format(d))
+    if os.path.exists(os.path.join(data_path, 'DATA/{}/node_features.pt'.format(d))):
+        node_feats = torch.load(os.path.join(data_path, 'DATA/{}/node_features.pt'.format(d)))
+    elif os.path.exists(os.path.join(data_path, 'DATA/{}/learned_node_feats.pt'.format(d))):
+        node_feats = torch.load(os.path.join(data_path, 'DATA/{}/learned_node_feats.pt'.format(d)))
     edge_feats = None
-    if os.path.exists('DATA/{}/edge_features_e0.pt'.format(d)):
-        edge_feats = torch.load('DATA/{}/edge_features_e0.pt'.format(d))
-    elif os.path.exists('DATA/{}/edge_features.pt'.format(d)):
-        edge_feats = torch.load('DATA/{}/edge_features.pt'.format(d))
+    if os.path.exists(os.path.join(data_path, 'DATA/{}/edge_features_e0.pt'.format(d))):
+        edge_feats = torch.load(os.path.join(data_path, 'DATA/{}/edge_features_e0.pt'.format(d)))
+    elif os.path.exists(os.path.join(data_path, 'DATA/{}/edge_features.pt'.format(d))):
+        edge_feats = torch.load(os.path.join(data_path, 'DATA/{}/edge_features.pt'.format(d)))
         edge_feats = torch.cat([edge_feats, torch.zeros((1, edge_feats.shape[1]), dtype=edge_feats.dtype)])
-        torch.save(edge_feats, 'DATA/{}/edge_features_e0.pt'.format(d))
+        torch.save(edge_feats, os.path.join(data_path, 'DATA/{}/edge_features_e0.pt'.format(d)))
     if node_feats is not None:
         if node_feats.dtype == torch.bool:
             node_feats = node_feats.type(torch.int8)
@@ -42,12 +42,12 @@ def load_feat(d):
             edge_feats = edge_feats.type(torch.int8)
     return node_feats, edge_feats
 
-def load_graph(d):
-    if os.path.isfile('DATA/{}/edges+uniq.csv'.format(d)):
-        df = pd.read_csv('DATA/{}/edges+uniq.csv'.format(d))
+def load_graph(d, data_path=''):
+    if os.path.isfile(os.path.join(data_path, 'DATA/{}/edges+uniq.csv'.format(d))):
+        df = pd.read_csv(os.path.join(data_path, 'DATA/{}/edges+uniq.csv'.format(d)))
     else:
-        df = pd.read_csv('DATA/{}/edges.csv'.format(d))
-    g = np.load('DATA/{}/ext_full.npz'.format(d))
+        df = pd.read_csv(os.path.join(data_path, 'DATA/{}/edges.csv'.format(d)))
+    g = np.load(os.path.join(data_path, 'DATA/{}/ext_full.npz'.format(d)))
     return g, df
 
 def parse_config(f):
